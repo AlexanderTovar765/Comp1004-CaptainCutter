@@ -1,0 +1,473 @@
+ function startGame() {
+            instructionsScreen.style.display = 'flex';
+            setTimeout(() => {
+                instructionsScreen.style.display = 'none';
+                countdownScreen.style.display = 'flex';
+                let countdown = 3;
+                const interval = setInterval(() => {
+                    document.getElementById('countdown').textContent = countdown;
+                    countdown--;
+                    if (countdown < 0) {
+                        clearInterval(interval);
+                        countdownScreen.style.display = 'none';
+                        gameArea.style.display = 'block';
+                        gameRunning = true;
+                        timeRemaining = 60; // Decreased timer
+                        killCounter = 0;
+                        currentLevel = 1;
+                        levelCompleteText.textContent = `Level ${currentLevel} Complete`;
+                        isBossLevel = false;
+                        boss.style.display = 'none';
+                        bossHealthBar.style.width = '100%';
+                        bossHealth = 100;
+                        bossY = 0;
+                        bossDirection = 1;
+                        drawBackground();
+                        drawPlayer();
+                        startLevel();
+                    }
+                }, 1000);
+            }, 10000);
+        }
+
+        function quitGame() {
+            window.close();
+        }
+
+        function startLevel() {
+            if (currentLevel % 3 === 1) {
+                // Kill counter level
+                timerElement.style.display = 'none';
+                killCounterElement.style.display = 'block';
+                killCounter = 0;
+                killCounterElement.textContent = `Kills: ${killCounter}/15`;
+                startKillCounterLevel();
+            } else if (currentLevel % 3 === 2) {
+                // Time based level
+                timerElement.style.display = 'block';
+                killCounterElement.style.display = 'none';
+                timerElement.textContent = `Time: ${timeRemaining}`;
+                startTimerBasedLevel();
+            } else {
+                // Boss level
+                startBossLevel();
+            }
+        }
+
+        function startKillCounterLevel() {
+            enemyInterval = setInterval(spawnEnemy, 2000);
+            powerupInterval = setInterval(spawnPowerup, 5000);
+        }
+
+        function startTimerBasedLevel() {
+    timeRemaining = 60; // Reset timeRemaining to 60 seconds
+    const timerInterval = setInterval(() => {
+        if (!gameRunning) {
+            clearInterval(timerInterval);
+            return;
+        }
+        if (timeRemaining > 0) {
+            timeRemaining--;
+            timerElement.textContent = `Time: ${timeRemaining}`;
+        } else {
+            clearInterval(timerInterval);
+            showLevelCompleteScreen();
+        }
+    }, 1000);
+    enemyInterval = setInterval(spawnEnemy, 2000);
+    powerupInterval = setInterval(spawnPowerup, 5000);
+}
+
+        function startBossLevel() {
+            isBossLevel = true;
+            boss.style.display = 'block';
+            bossHealthBar.style.width = '100%';
+            bossHealth = 100;
+            bossY = 0;
+            bossDirection = 1;
+            bossProjectileInterval = setInterval(spawnBossProjectiles, 500);
+            bossInterval = setInterval(moveBoss, 16);
+        }
+
+        function showLevelCompleteScreen() {
+            if (isBossLevel) {
+                return;
+            }
+            gameRunning = false;
+            levelCompleteScreen.style.display = 'block';
+            clearInterval(enemyInterval);
+            clearInterval(powerupInterval);
+            clearInterval(bossProjectileInterval);
+        }
+
+        function continueGame() {
+            levelCompleteScreen.style.display = 'none';
+            gameRunning = true;
+            currentLevel++;
+            levelCompleteText.textContent = `Level ${currentLevel} Complete`;
+            clearGameArea();
+            startLevel();
+        }
+
+        function clearGameArea() {
+            const enemies = document.querySelectorAll('.enemy');
+            const powerups = document.querySelectorAll('.powerup');
+            const bullets = document.querySelectorAll('.bullet');
+            const bossProjectiles = document.querySelectorAll('.boss-projectile');
+
+            enemies.forEach(enemy => enemy.remove());
+            powerups.forEach(powerup => powerup.remove());
+            bullets.forEach(bullet => bullet.remove());
+            bossProjectiles.forEach(projectile => projectile.remove());
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'w') keys.w = true;
+            if (e.key === 'a') keys.a = true;
+            if (e.key === 's') keys.s = true;
+            if (e.key === 'd') keys.d = true;
+        });
+
+        document.addEventListener('keyup', (e) => {
+            if (e.key === 'w') keys.w = false;
+            if (e.key === 'a') keys.a = false;
+            if (e.key === 's') keys.s = false;
+            if (e.key === 'd') keys.d = false;
+        });
+
+        function movePlayer() {
+            if (!gameRunning) return;
+            const rect = player.getBoundingClientRect();
+            if (keys.w && rect.top > gameArea.offsetTop) player.style.top = `${rect.top - playerSpeed}px`;
+            if (keys.s && rect.bottom < gameArea.offsetHeight) player.style.top = `${rect.top + playerSpeed}px`;
+            if (keys.a && rect.left > gameArea.offsetLeft) player.style.left = `${rect.left - playerSpeed}px`;
+            if (keys.d && rect.right < gameArea.offsetWidth) player.style.left = `${rect.left + playerSpeed}px`;
+        }
+
+        setInterval(movePlayer, 16);
+
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space' && gameRunning) shoot();
+        });
+
+        function shoot() {
+            const bullet = document.createElement('div');
+            bullet.classList.add('bullet');
+            bullet.style.left = `${player.offsetLeft + player.offsetWidth}px`;
+            bullet.style.top = `${player.offsetTop + player.offsetHeight / 2}px`;
+            gameArea.appendChild(bullet);
+            moveBullet(bullet);
+            if (doubleDamage) {
+                const bullet2 = bullet.cloneNode();
+                bullet2.style.top = `${parseInt(bullet.style.top) - 10}px`;
+                gameArea.appendChild(bullet2);
+                moveBullet(bullet2);
+            }
+        }
+
+        function moveBullet(bullet) {
+            const interval = setInterval(() => {
+                if (!gameRunning) {
+                    clearInterval(interval);
+                    return;
+                }
+                bullet.style.left = `${bullet.offsetLeft + 10}px`;
+                if (bullet.offsetLeft > window.innerWidth) {
+                    bullet.remove();
+                    clearInterval(interval);
+                }
+                checkCollision(bullet, interval);
+            }, 16);
+        }
+
+        let enemyInterval;
+        function spawnEnemy() {
+            if (!gameRunning || isBossLevel) return;
+            const enemy = document.createElement('div');
+            enemy.classList.add('enemy');
+            enemy.style.top = `${Math.random() * (gameArea.offsetHeight - 40)}px`;
+            enemy.style.left = `${gameArea.offsetWidth}px`; // Spawn from the right side
+
+            const healthBar = document.createElement('div');
+            healthBar.classList.add('health-bar');
+            enemy.appendChild(healthBar);
+
+            const badShip = document.createElement('div');
+            badShip.classList.add('bad-ship');
+            enemy.appendChild(badShip);
+
+            gameArea.appendChild(enemy);
+            moveEnemy(enemy);
+        }
+
+        function moveEnemy(enemy) {
+            const interval = setInterval(() => {
+                if (!gameRunning) {
+                    clearInterval(interval);
+                    return;
+                }
+                if (slowEnemies) {
+                    enemy.style.left = `${enemy.offsetLeft - 1}px`;
+                } else {
+                    enemy.style.left = `${enemy.offsetLeft - 2}px`;
+                }
+                if (enemy.offsetLeft + enemy.offsetWidth < 0) {
+                    enemy.remove();
+                    clearInterval(interval);
+                }
+                checkCollisionWithPlayer(enemy, interval);
+            }, 16);
+        }
+
+        function checkCollisionWithPlayer(enemy, enemyInterval) {
+            const playerRect = player.getBoundingClientRect();
+            const enemyRect = enemy.getBoundingClientRect();
+
+            if (
+                playerRect.left < enemyRect.right &&
+                playerRect.right > enemyRect.left &&
+                playerRect.top < enemyRect.bottom &&
+                playerRect.bottom > enemyRect.top
+            ) {
+                enemy.remove();
+                clearInterval(enemyInterval);
+                playerHit();
+            }
+        }
+
+        function playerHit() {
+            health--;
+            healthElement.textContent = health;
+            if (health <= 0) {
+                endGame();
+            }
+        }
+
+        function endGame() {
+            gameRunning = false;
+            gameArea.style.display = 'none';
+            if (score > highScores[4].score) {
+                gameOverScreen.style.display = 'flex';
+                showHighScores();
+                document.getElementById('initials').disabled = false;
+                document.getElementById('submitScore').disabled = false;
+            } else {
+                quitGame();
+            }
+        }
+
+        function restartGame() {
+            location.reload();
+        }
+
+        let powerupInterval;
+        function spawnPowerup() {
+            if (!gameRunning || isBossLevel) return;
+            const powerup = document.createElement('div');
+            powerup.classList.add('powerup');
+            powerup.style.top = `${Math.random() * (gameArea.offsetHeight - 40)}px`;
+
+            if (Math.random() < 0.33) {
+                powerup.classList.add('hp');
+                powerup.textContent = 'HP';
+            } else if (Math.random() < 0.66) {
+                powerup.textContent = 'X2';
+            } else {
+                powerup.classList.add('speed');
+                powerup.textContent = '(0.5)';
+            }
+
+            gameArea.appendChild(powerup);
+            movePowerup(powerup);
+        }
+
+        function movePowerup(powerup) {
+            const interval = setInterval(() => {
+                if (!gameRunning) {
+                    clearInterval(interval);
+                    return;
+                }
+                powerup.style.left = `${powerup.offsetLeft - 2}px`;
+                if (powerup.offsetLeft + powerup.offsetWidth < 0) {
+                    powerup.remove();
+                    clearInterval(interval);
+                }
+                checkPowerupCollision(powerup, interval);
+            }, 16);
+        }
+
+        function checkPowerupCollision(powerup, powerupInterval) {
+            const playerRect = player.getBoundingClientRect();
+            const powerupRect = powerup.getBoundingClientRect();
+
+            if (
+                playerRect.left < powerupRect.right &&
+                playerRect.right > powerupRect.left &&
+                playerRect.top < powerupRect.bottom &&
+                playerRect.bottom > powerupRect.top
+            ) {
+                if (powerup.classList.contains('hp')) {
+                    health++;
+                    healthElement.textContent = health;
+                } else if (powerup.classList.contains('speed')) {
+                    slowEnemies = true;
+                    setTimeout(() => slowEnemies = false, 15000);
+                } else {
+                    activateDoubleDamage();
+                }
+                powerup.remove();
+                clearInterval(powerupInterval);
+            }
+        }
+
+        function activateDoubleDamage() {
+            doubleDamage = true;
+            setTimeout(() => doubleDamage = false, 15000);
+        }
+
+        function checkCollision(bullet, bulletInterval) {
+            if (isBossLevel) {
+                const bossRect = boss.getBoundingClientRect();
+                const bulletRect = bullet.getBoundingClientRect();
+
+                if (
+                    bulletRect.left < bossRect.right &&
+                    bulletRect.right > bossRect.left &&
+                    bulletRect.top < bossRect.bottom &&
+                    bulletRect.bottom > bossRect.top
+                ) {
+                    bullet.remove();
+                    clearInterval(bulletInterval);
+                    bossHealth -= 10;
+                    bossHealthBar.style.width = `${bossHealth}%`;
+                    if (bossHealth <= 0) {
+                        boss.style.display = 'none';
+                        isBossLevel = false;
+                        showLevelCompleteScreen();
+                    }
+                }
+            } else {
+                const enemies = document.querySelectorAll('.enemy');
+                enemies.forEach(enemy => {
+                    const bulletRect = bullet.getBoundingClientRect();
+                    const enemyRect = enemy.getBoundingClientRect();
+
+                    if (
+                        bulletRect.left < enemyRect.right &&
+                        bulletRect.right > enemyRect.left &&
+                        bulletRect.top < enemyRect.bottom &&
+                        bulletRect.bottom > enemyRect.top
+                    ) {
+                        bullet.remove();
+                        clearInterval(bulletInterval);
+                        enemy.firstChild.style.width = `${parseInt(enemy.firstChild.style.width || 100) - 25}%`;
+                        if (parseInt(enemy.firstChild.style.width) <= 0) {
+                            enemy.remove();
+                            score++;
+                            scoreElement.textContent = score;
+                            if (currentLevel % 3 === 1) {
+                                killCounter++;
+                                killCounterElement.textContent = `Kills: ${killCounter}/15`;
+                                if (killCounter >= 15) {
+                                    showLevelCompleteScreen();
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        let bossProjectileInterval;
+        function spawnBossProjectiles() {
+            if (!gameRunning || !isBossLevel) return;
+            const projectile = document.createElement('div');
+            projectile.classList.add('boss-projectile');
+            projectile.style.top = `${bossY}px`;
+            projectile.style.left = `${gameArea.offsetWidth}px`;
+            gameArea.appendChild(projectile);
+            moveBossProjectile(projectile);
+        }
+
+        function moveBossProjectile(projectile) {
+            const interval = setInterval(() => {
+                if (!gameRunning || !isBossLevel) {
+                    clearInterval(interval);
+                    return;
+                }
+                projectile.style.left = `${projectile.offsetLeft - 5}px`;
+                if (projectile.offsetLeft + projectile.offsetWidth < 0) {
+                    projectile.remove();
+                    clearInterval(interval);
+                }
+                checkBossProjectileCollision(projectile, interval);
+            }, 16);
+        }
+
+        function checkBossProjectileCollision(projectile, projectileInterval) {
+            const playerRect = player.getBoundingClientRect();
+            const projectileRect = projectile.getBoundingClientRect();
+
+            if (
+                playerRect.left < projectileRect.right &&
+                playerRect.right > projectileRect.left &&
+                playerRect.top < projectileRect.bottom &&
+                playerRect.bottom > projectileRect.top
+            ) {
+                projectile.remove();
+                clearInterval(projectileInterval);
+                playerHit();
+            }
+        }
+
+        let bossInterval;
+        function moveBoss() {
+            if (!gameRunning || !isBossLevel) return;
+            bossY += bossDirection * 2;
+            boss.style.top = `${bossY}px`;
+            if (bossY > gameArea.offsetHeight - 80) {
+                bossDirection = -1;
+            } else if (bossY < 0) {
+                bossDirection = 1;
+            }
+        }
+
+        function drawPlayer() {
+            const goodShip = document.createElement('div');
+            goodShip.classList.add('good-ship');
+            player.appendChild(goodShip);
+        }
+
+        function drawBackground() {
+            for (let i = 0; i < 500; i++) {
+                const star = document.createElement('div');
+                star.classList.add('star');
+                star.style.top = `${Math.random() * 100}%`;
+                star.style.left = `${Math.random() * 100}%`;
+                gameArea.appendChild(star);
+            }
+        }
+
+        function submitScore() {
+            const initials = initialsInput.value;
+            highScores[4] = { initials, score };
+            highScores.sort((a, b) => b.score - a.score);
+            showHighScores();
+            initialsInput.value = '';
+            document.getElementById('initials').disabled = true;
+            document.getElementById('submitScore').disabled = true;
+        }
+
+        function showHighScores() {
+            highScoresList.innerHTML = '';
+            highScores.forEach((score, index) => {
+                const li = document.createElement('li');
+                li.textContent = `${index + 1}. ${score.score} - ${score.initials}`;
+                highScoresList.appendChild(li);
+            });
+        }
+
+        startGame();
+    </script>
+</body>
+</html>
