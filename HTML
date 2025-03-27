@@ -1,0 +1,87 @@
+<body>
+    <div class="instructions-screen" id="instructionsScreen">
+        <h2>Instructions</h2>
+        <p>You are Captain Cutter</p>
+        <p>Your goal...</p>
+        <p>SAVE EARTH AT ALL COSTS!</p>
+        <p>Move with WASD keys.</p>
+        <p>Fire your lasers with space bar.</p>
+        <p>Pick up power ups to even the fight!</p>
+        <p>Good luck Captain!</p>
+    </div>
+
+    <div class="countdown-screen" id="countdownScreen" style="display: none;">
+        <h1 id="countdown">3</h1>
+    </div>
+
+    <div class="game-area" id="gameArea" style="display: none;">
+        <div class="timer" id="timer"></div>
+        <div class="kill-counter" id="killCounter"></div>
+        <div class="player" id="player"></div>
+        <div class="score">Score: <span id="score">0</span></div>
+        <div class="health">Health: <span id="health">3</span></div>
+        <div class="game-over" id="gameOver" style="display: none;">Game Over<br><button onclick="restartGame()">Restart</button></div>
+        <div class="level-complete-screen" id="levelCompleteScreen">
+            <h1 id="levelCompleteText">Level 1 Complete</h1>
+            <button onclick="continueGame()">Continue Game</button>
+            <button onclick="quitGame()">Quit Game</button>
+        </div>
+        <div class="boss" id="boss" style="display: none;">
+            <div class="crab-body"></div>
+            <div class="crab-claw" style="top: 20px; left: 20px;"></div>
+            <div class="crab-claw" style="top: 20px; right: 20px;"></div>
+            <div class="crab-eye" style="top: 30px; left: 30px;"></div>
+            <div class="crab-eye" style="top: 30px; right: 30px;"></div>
+            <div class="boss-health-bar" id="bossHealthBar"></div>
+        </div>
+    </div>
+
+    <div class="game-over-screen" id="gameOverScreen" style="display: none;">
+        <h1>Game Over</h1>
+        <p>Enter your initials:</p>
+        <input id="initials" type="text" maxlength="3">
+        <button onclick="submitScore()">Submit</button>
+        <button onclick="quitGame()">Quit</button>
+        <h2>High Scores:</h2>
+        <ul id="highScores"></ul>
+    </div>
+
+    <script>
+        const gameArea = document.getElementById('gameArea');
+        const instructionsScreen = document.getElementById('instructionsScreen');
+        const countdownScreen = document.getElementById('countdownScreen');
+        const player = document.getElementById('player');
+        const scoreElement = document.getElementById('score');
+        const healthElement = document.getElementById('health');
+        const timerElement = document.getElementById('timer');
+        const killCounterElement = document.getElementById('killCounter');
+        const gameOverElement = document.getElementById('gameOver');
+        const levelCompleteScreen = document.getElementById('levelCompleteScreen');
+        const levelCompleteText = document.getElementById('levelCompleteText');
+        const boss = document.getElementById('boss');
+        const bossHealthBar = document.getElementById('bossHealthBar');
+        const gameOverScreen = document.getElementById('gameOverScreen');
+        const initialsInput = document.getElementById('initials');
+        const highScoresList = document.getElementById('highScores');
+
+        let score = 0;
+        let health = 3;
+        let playerSpeed = 10;
+        let gameRunning = true;
+        let doubleDamage = false;
+        let slowEnemies = false;
+        let timeRemaining = 60; // Decreased timer
+        let killCounter = 0;
+        let currentLevel = 1;
+        let isBossLevel = false;
+        let bossHealth = 100;
+        let bossY = 0;
+        let bossDirection = 1;
+        const keys = { w: false, a: false, s: false, d: false };
+        let highScores = [
+            { initials: 'ART', score: 9999 },
+            { initials: 'AMS', score: 2002 },
+            { initials: 'MAD', score: 1967 },
+            { initials: 'BAR', score: 712 },
+            { initials: 'TRH', score: 6 }
+        ];
