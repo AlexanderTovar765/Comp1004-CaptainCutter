@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Space Shooter Game</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+            background: black;
+            color: white;
+            text-align: center;
+        }
+
+        .game-area {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            background: #000; /* Black background to represent space */
+        }
+
+        .star {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: #FFF; /* White color for the stars */
+            border-radius: 50%;
+        }
+
+        .player {
+            position: absolute;
+            bottom: 50%;
+            left: 10px;
+            width: 40px;
+            height: 40px;
+        }
+
+        .enemy, .powerup {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 40px;
+            height: 40px;
+            animation: moveObject 10s linear infinite;
+        }
+
+        .powerup {
+            background: yellow;
+            font-size: 12px;
+            font-weight: bold;
+            color: black;
+            text-align: center;
+            line-height: 40px;
+        }
+
+            .powerup.hp {
+                background: green;
+            }
+
+            .powerup.speed {
+                background: blue;
+            }
+
+        @keyframes moveObject {
+            from {
+                transform: translateX(0);
+            }
+
+            to {
+                transform: translateX(-100vw);
+            }
+        }
+
+        .bullet {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: yellow;
+            border-radius: 50%;
+        }
+
+        .health-bar {
+            position: absolute;
+            top: -10px;
+            left: 0;
+            width: 100%;
+            height: 5px;
+            background: green;
+        }
+
+        .score, .health, .timer, .kill-counter {
+            position: absolute;
+            top: 10px;
+            color: white;
+            font-size: 20px;
+        }
+
+        .score {
+            left: 10px;
+        }
+
+        .health {
+            right: 10px;
+        }
+
+        .timer {
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .kill-counter {
+            left: 150px;
+        }
+
+        .game-over, .level-complete-screen {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 36px;
+            text-align: center;
+        }
+
+            .level-complete-screen button {
+                margin: 10px;
+                padding: 10px 20px;
+                font-size: 20px;
+                cursor: pointer;
+                border: none;
+                border-radius: 5px;
+                background: white;
+                color: black;
+            }
+
+                .level-complete-screen button:hover {
+                    background: gray;
+                }
+
+        .instructions-screen {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: absolute;
+            width: 100vw;
+            height: 100vh;
+            background: black;
+        }
+
+            .instructions-screen h2 {
+                font-size: 36px;
+                margin-bottom: 20px;
+            }
+
+            .instructions-screen p {
+                font-size: 18px;
+                margin: 10px;
+            }
+
+            .instructions-screen button {
+                margin: 10px;
+                padding: 10px 20px;
+                font-size: 20px;
+                cursor: pointer;
+                border: none;
+                border-radius: 5px;
+                background: white;
+                color: black;
+            }
+
+                .instructions-screen button:hover {
+                    background: gray;
+                }
+
+        .countdown-screen {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: absolute;
+            width: 100vw;
+            height: 100vh;
+            background: black;
+        }
+
+            .countdown-screen h1 {
+                font-size: 48px;
+                margin-bottom: 20px;
+            }
+
+        .game-over-screen {
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: absolute;
+            width: 100vw;
+            height: 100vh;
+            background: black;
+        }
+
+            .game-over-screen h1 {
+                font-size: 48px;
+                margin-bottom: 20px;
+            }
+
+            .game-over-screen input {
+                padding: 10px 20px;
+                font-size: 20px;
+                border: none;
+                border-radius: 5px;
+                background: white;
+                color: black;
+            }
+
+            .game-over-screen button {
+                margin: 10px;
+                padding: 10px 20px;
+                font-size: 20px;
+                cursor: pointer;
+                border: none;
+                border-radius: 5px;
+                background: white;
+                color: black;
+            }
+
+                .game-over-screen button:hover {
+                    background: gray;
+                }
+
+        .boss {
+            position: absolute;
+            top: 50%;
+            right: 0;
+            width: 80px;
+            height: 80px;
+        }
+
+        .boss-health-bar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 10px;
+            background: green;
+        }
+
+        .boss-projectile {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: red;
+            border-radius: 50%;
+        }
+
+        .good-ship {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 40px;
+            height: 40px;
+            background: #0000FF;
+            clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+        }
+
+        .bad-ship {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 40px;
+            height: 40px;
+            background: #FF0000;
+            border-radius: 50%;
+        }
+
+        .boss-ship {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 80px;
+            height: 80px;
+        }
+
+        .crab-body {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 80px;
+            height: 80px;
+            background: #FFA07A;
+            border-radius: 50%;
+        }
+
+        .crab-claw {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 20px;
+            height: 20px;
+            background: #FFA07A;
+            clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+        }
+
+        .crab-eye {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 10px;
+            height: 10px;
+            background: #000000;
+            border-radius: 50%;
+        }
+    </style>
+</head>
